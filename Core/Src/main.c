@@ -91,7 +91,7 @@ volatile uint8_t coin_pulse = 0;
 uint8_t state = 0;            // State variable to manage tasks
 uint32_t task_start_time = 0;
 
-
+int countdown_seconds;
 
 uint8_t digit_map[13] = {
         0x3F, // 0
@@ -193,21 +193,28 @@ int main(void)
 				  Display_fifty();
 				  task_start_time = HAL_GetTick();
 				  initial_display_done = 1;
+				  countdown_seconds = 20;
 			  }
 
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
 				  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_SET);
-				  if (HAL_GetTick() - task_start_time < 20000)
+				  //printf("20 sec countdown starts....\n\r");
+				  if (HAL_GetTick() - task_start_time < 23000)
 				  {
 					  TM1637_Countdown_20Sec();
 				  }
 				  else
 				  {
-					  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
-					  printf("return to IDLE\n\r");
-					  state = 0;
-					  coin_pulse = 0;
+					  if (countdown_seconds == 0)
+					  {
+					      printf("20 sec countdown completed\n");
+					      HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+					      printf("return to IDLE\n\r");
+					      state = 0;
+					      coin_pulse = 0;
+					      initial_display_done = 0;
+					  }
 				  }
 			  }
 			  break;
@@ -218,26 +225,30 @@ int main(void)
 				  Display_1dhiram();
 				  task_start_time = HAL_GetTick();
 				  initial_display_done = 1;
+				  countdown_seconds = 20;
 			  }
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
-				  state = 2;
+				  state = 3;
 			  }
 			  break;
 
 		  case 3:
-			  if (HAL_GetTick() - task_start_time < 20000)
+			  if (HAL_GetTick() - task_start_time < 23000)
 			  {
 				  TM1637_Countdown_20Sec();
 			  }
 			  else
 			  {
-				  printf("GPIO 3 5 6 enabled\n\r");
-				  HAL_GPIO_WritePin(SIGNAL_3_GPIO_Port, SIGNAL_3_Pin, GPIO_PIN_SET);
-				  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_SET);
-				  HAL_GPIO_WritePin(SIGNAL_7_GPIO_Port, SIGNAL_7_Pin, GPIO_PIN_SET);
-				  task_start_time = HAL_GetTick();
-				  state = 4;
+				  if(countdown_seconds == 0)
+				  {
+					  printf("GPIO 3 5 6 enabled\n\r");
+					  HAL_GPIO_WritePin(SIGNAL_3_GPIO_Port, SIGNAL_3_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_7_GPIO_Port, SIGNAL_7_Pin, GPIO_PIN_SET);
+					  task_start_time = HAL_GetTick();
+					  state = 4;
+				  }
 			  }
 			  break;
 
@@ -271,6 +282,9 @@ int main(void)
 			  {
 				  printf("return to IDLE\n\r");
 				  state = 0;
+				  coin_pulse = 0;
+				  initial_display_done = 0;
+
 			  }
 			  break;
 
@@ -499,7 +513,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : CLK_Pin DATA_Pin */
   GPIO_InitStruct.Pin = CLK_Pin|DATA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -517,6 +531,7 @@ void processPulse() {
 
 	 if (pulse_interrupt_Flag)
 	 {
+		 HAL_Delay(50);
 		if (pulse_start_time == 0)
 		{
 			pulse_start_time = HAL_GetTick();
@@ -524,15 +539,19 @@ void processPulse() {
 
 		if ((HAL_GetTick() - pulse_start_time) >= pulse_timeout)
 		{
+			__disable_irq();
 			if (coin_pulse == 1)
 			{
+				printf("1 pulse is receicved\n\r");
 				state = 1;
 			}
 			else if (coin_pulse == 2)
 			{
+				printf("2 pulse is receicved\n\r");
 				state = 2;
 			}
 			coin_pulse = 0;
+			__enable_irq();
 			pulse_interrupt_Flag = 0;
 			pulse_start_time = 0;
 		}
@@ -542,12 +561,11 @@ void processPulse() {
 void TM1637_Countdown_20Sec(void)
 {
 	static bool colon_state = false;
-	static int countdown_seconds = 20;
 	static uint32_t last_update_time = 0;
 	uint8_t display_data[4] = {0x00, 0x00, 0x00, 0x00};
-    if ((current_time_ms - last_update_time) >= 1000)
+    if (HAL_GetTick() - last_update_time >= 1000)
     {
-        last_update_time = current_time_ms;
+        last_update_time = HAL_GetTick();
         colon_state = !colon_state;
 
         display_data[0] = digit_map[0];
@@ -566,7 +584,8 @@ void TM1637_Countdown_20Sec(void)
         printf("Countdown: %02d seconds\n", countdown_seconds);
         countdown_seconds--;
         if (countdown_seconds < 0) {
-            countdown_seconds = 20;
+        	countdown_seconds = 0;
+			printf("20 sec countdown completed\n");
         }
     }
 }
@@ -575,12 +594,14 @@ void Display_fifty(void)
 {
 	uint8_t data[4] = {0x00, digit_map[5], digit_map[0], digit_map[10]};
 	TM1637_WriteData(0xC0, data, 4);
+	printf("Displayed 50 fils\n\r");
 }
 
 void Display_1dhiram(void)
 {
 	uint8_t data[4] = {0x00, 0x00, digit_map[1], digit_map[11]};
 	TM1637_WriteData(0xC0, data, 4);
+	printf("displayed 1 Dhiram\n\r");
 }
 
 void Display_2dhiram(void)
@@ -603,6 +624,7 @@ void TM1637_DisplayClear(void)
 {
 	uint8_t data[4] = {0x00, 0x00, 0x00, 0x00};
 	TM1637_WriteData(0xC0, data, 4);
+	printf("System going to IDLE state.....it takes 2 minutes\n\r");
 }
 
 #ifdef __GNUC__
