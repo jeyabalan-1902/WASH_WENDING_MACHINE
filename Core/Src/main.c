@@ -188,6 +188,7 @@ int main(void)
 				  if (coin_pulse == 1) // Check for single coin pulse
 				  {
 					  state = 1; // Transition to state 1
+					  printf("coin pulse received\n\r");
 					  initial_display_done = 0; // Reset display flag
 					  coin_pulse = 0;
 				  }
