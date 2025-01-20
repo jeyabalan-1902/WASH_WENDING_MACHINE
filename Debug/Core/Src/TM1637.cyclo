@@ -1,0 +1,6 @@
+../Core/Src/TM1637.c:14:6:Delay_us	3
+../Core/Src/TM1637.c:25:6:start	1
+../Core/Src/TM1637.c:34:6:stop	1
+../Core/Src/TM1637.c:45:6:waitforAck	1
+../Core/Src/TM1637.c:56:6:writeByte	3
+../Core/Src/TM1637.c:77:6:TM1637_WriteData	2
