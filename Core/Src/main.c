@@ -75,9 +75,9 @@ volatile uint32_t current_time_ms = 0; // System time in milliseconds
 
 //static uint32_t last_pulse_time = 0;
 
-static uint32_t last_pulse_time = 0;
-static uint32_t coin_pulse_count = 0;
-static uint8_t process_pulse = 0;
+//static uint32_t last_pulse_time = 0;
+//static uint32_t coin_pulse_count = 0;
+//static uint8_t process_pulse = 0;
 
 volatile uint8_t pulseCount = 0;          // Stores the number of pulses
 volatile uint8_t pulseProcessed = 0;     // Flag to indicate processing
@@ -128,7 +128,7 @@ void Display_2dhiram(void);
 void coin_acceptor_task(uint8_t pulse_count);
 void ProcessCoinInterrupt();
 void process_pulse_count(uint8_t count);
-void processPulse(uint8_t count);
+void processPulse();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -171,8 +171,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   printf("system start\n\r");
-  //TM1637_Countdown_20Sec();
-  state = 0;            // State variable to manage tasks
+  state = 0;
   task_start_time = 0;
   /* USER CODE END 2 */
 
@@ -182,52 +181,35 @@ int main(void)
   {
 	  switch (state)
 	  {
-		  case 0: // Display dashes until coin pulse is detected
+		  case 0:
 			  DisplayDashes();
-			  if(pulse_interrupt_Flag){
-				  if (coin_pulse == 1) // Check for single coin pulse
-				  {
-					  state = 1; // Transition to state 1
-					  printf("coin pulse received\n\r");
-					  initial_display_done = 0; // Reset display flag
-					  coin_pulse = 0;
-				  }
-				  else if (coin_pulse == 2) // Check for two coin pulses
-				  {
-					  state = 2; // Transition to state 2
-					  initial_display_done = 0; // Reset display flag
-					  coin_pulse = 0;
-				  }
-			  }
-
+			  processPulse();
 			  break;
 
 		  case 1:
 
-				  if (!initial_display_done)
+			  if (!initial_display_done)
+			  {
+				  Display_fifty();
+				  task_start_time = HAL_GetTick();
+				  initial_display_done = 1;
+			  }
+
+			  if (HAL_GetTick() - task_start_time >= 2000)
+			  {
+				  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_SET);
+				  if (HAL_GetTick() - task_start_time < 20000)
 				  {
-					  Display_fifty(); // Display "50"
-					  task_start_time = HAL_GetTick();
-					  initial_display_done = 1; // Mark initial display as done
+					  TM1637_Countdown_20Sec();
 				  }
-
-				  if (HAL_GetTick() - task_start_time >= 2000)
+				  else
 				  {
-					  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_SET); // Activate relay signal
-					  if (HAL_GetTick() - task_start_time < 20000) // Check if 20 seconds haven't elapsed
-					  {
-						  TM1637_Countdown_20Sec();
-					  }
-					  else
-					  {
-						  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET); // Deactivate relay signal
-						  printf("return to IDLE\n\r");
-
-						  state = 0; // Return to initial state
-						  coin_pulse = 0; // Reset coin pulse count
-					  }
-
+					  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+					  printf("return to IDLE\n\r");
+					  state = 0;
+					  coin_pulse = 0;
 				  }
+			  }
 			  break;
 
 		  case 2:
@@ -271,7 +253,7 @@ int main(void)
 			  }
 			  break;
 
-		  case 5: // Enable GPIO A & B for 5 seconds
+		  case 5:
 			  printf("GPIO A & B enabled\n\r");
 			  HAL_GPIO_WritePin(SIGNAL_A_GPIO_Port, SIGNAL_A_Pin, GPIO_PIN_SET);
 			  HAL_GPIO_WritePin(SIGNAL_B_GPIO_Port, SIGNAL_B_Pin, GPIO_PIN_SET);
@@ -279,21 +261,21 @@ int main(void)
 			  printf("GPIO A & B disabled\n\r");
 			  HAL_GPIO_WritePin(SIGNAL_A_GPIO_Port, SIGNAL_A_Pin, GPIO_PIN_RESET);
 			  HAL_GPIO_WritePin(SIGNAL_B_GPIO_Port, SIGNAL_B_Pin, GPIO_PIN_RESET);
-			  task_start_time = HAL_GetTick(); // Record the start time for the next state
+			  task_start_time = HAL_GetTick();
 			  state = 6;
 			  break;
 
-		  case 6: // Clear display and wait for 2 minutes
+		  case 6:
 			  TM1637_DisplayClear();
-			  if (HAL_GetTick() - task_start_time >= 90000) // Wait for 2 minutes
+			  if (HAL_GetTick() - task_start_time >= 90000)
 			  {
 				  printf("return to IDLE\n\r");
-				  state = 0; // Return to the initial state
+				  state = 0;
 			  }
 			  break;
 
 		  default:
-			  state = 0; // Fallback to the initial state
+			  state = 0;
 			  break;
 	  }
     /* USER CODE END WHILE */
@@ -554,6 +536,7 @@ void processPulse() {
 			pulse_interrupt_Flag = 0;
 			pulse_start_time = 0;
 		}
+	 }
 }
 
 void TM1637_Countdown_20Sec(void)
