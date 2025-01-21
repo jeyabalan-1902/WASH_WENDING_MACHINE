@@ -65,7 +65,7 @@ UART_HandleTypeDef huart1;
 
 uint8_t initial_display_done = 0;
 volatile uint8_t pulse_interrupt_Flag = 0;
-
+uint16_t readPotvalue;
 // Global variables
 //static uint32_t last_pulse_time = 0;  // Tracks the timestamp of the last pulse
 //volatile uint32_t coin_pulse_count = 0; // Tracks the number of pulses
@@ -169,16 +169,20 @@ int main(void)
   MX_ADC_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_ADC_Start(&hadc);
   printf("system start\n\r");
   state = 0;
   task_start_time = 0;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  HAL_ADC_PollForConversion(&hadc, 1000);
+	  readPotvalue = HAL_ADC_GetValue(&hadc);
+	  //DisplayDashes();
 	  switch (state)
 	  {
 		  case 0:
@@ -374,7 +378,7 @@ static void MX_ADC_Init(void)
   hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc.Init.LowPowerAutoWait = DISABLE;
   hadc.Init.LowPowerAutoPowerOff = DISABLE;
-  hadc.Init.ContinuousConvMode = DISABLE;
+  hadc.Init.ContinuousConvMode = ENABLE;
   hadc.Init.DiscontinuousConvMode = DISABLE;
   hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -513,7 +517,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : CLK_Pin DATA_Pin */
   GPIO_InitStruct.Pin = CLK_Pin|DATA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
