@@ -83,7 +83,7 @@ volatile uint8_t pulseCount = 0;          // Stores the number of pulses
 volatile uint8_t pulseProcessed = 0;     // Flag to indicate processing
 volatile uint16_t timeoutCounter = 0;    // Timer counter for timeout
 
-uint32_t pulse_timeout = 300;
+uint32_t pulse_timeout = 500;
 uint32_t last_pulse_time = 0;
 
 volatile uint8_t coin_pulse = 0;
@@ -93,7 +93,7 @@ uint32_t task_start_time = 0;
 
 int countdown_seconds;
 
-uint8_t digit_map[13] = {
+uint8_t digit_map[15] = {
         0x3F, // 0
         0x06, // 1
         0x5B, // 2
@@ -106,7 +106,9 @@ uint8_t digit_map[13] = {
         0x6F,  // 9
 		0x71,  //F  10
 		0x5E,  //D  11
-		0x40   //dash 12
+		0x40,   //dash 12
+		0x6D,   //S 13
+		0x71,   //C 14
     };
 
 
@@ -122,14 +124,19 @@ static void MX_TIM6_Init(void);
 void DisplayDashes(void);
 void Display_fifty(void);
 void TM1637_Countdown_20Sec(void);
-void Display_1dhiram(void);
 void TM1637_DisplayClear(void);
-void Display_2dhiram(void);
 void coin_acceptor_task(uint8_t pulse_count);
 void ProcessCoinInterrupt();
 void process_pulse_count(uint8_t count);
 void processPulse();
 void Relay_off_time(uint16_t potvalue);
+void display_pulse2_3(void);
+void Display_01(void);
+void Display_02(void);
+void Display_03(void);
+void Display_SC01(void);
+void Display_SC02(void);
+void Display_OFF(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -181,17 +188,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_ADC_PollForConversion(&hadc, 1000);
-	  readPotvalue = HAL_ADC_GetValue(&hadc);
 	  //DisplayDashes();
 	  switch (state)
 	  {
-		  case 0:
+	      case 0:
 			  DisplayDashes();
 			  processPulse();
 			  break;
 
-		  case 1:
+	      case 1:
 
 			  if (!initial_display_done)
 			  {
@@ -212,6 +217,8 @@ int main(void)
 					  if (countdown_seconds == 0)
 					  {
 						  printf("20 sec countdown completed\n");
+						  HAL_ADC_PollForConversion(&hadc, 1000);
+						  readPotvalue = HAL_ADC_GetValue(&hadc);
 						  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_SET);
 					      Relay_off_time(readPotvalue);
 					  }
@@ -219,10 +226,10 @@ int main(void)
 			  }
 			  break;
 
-		  case 2:
+	      case 2:
 			  if (!initial_display_done)
 			  {
-				  Display_1dhiram();
+				  Display_01();
 				  task_start_time = HAL_GetTick();
 				  initial_display_done = 1;
 				  countdown_seconds = 20;
@@ -242,7 +249,7 @@ int main(void)
 			  {
 				  if(countdown_seconds == 0)
 				  {
-					  printf("GPIO 3 5 6 enabled\n\r");
+					  printf("GPIO 3 5 7 enabled\n\r");
 					  HAL_GPIO_WritePin(SIGNAL_3_GPIO_Port, SIGNAL_3_Pin, GPIO_PIN_SET);
 					  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_SET);
 					  HAL_GPIO_WritePin(SIGNAL_7_GPIO_Port, SIGNAL_7_Pin, GPIO_PIN_SET);
@@ -255,16 +262,247 @@ int main(void)
 		  case 4:
 			  if (HAL_GetTick() - task_start_time >= 30000)
 			  {
-				  printf("GPIO 3 5 6 disabled\n\r");
+				  printf("GPIO 3 5 7 disabled\n\r");
 				  HAL_GPIO_WritePin(SIGNAL_3_GPIO_Port, SIGNAL_3_Pin, GPIO_PIN_RESET);
 				  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_RESET);
 				  HAL_GPIO_WritePin(SIGNAL_7_GPIO_Port, SIGNAL_7_Pin, GPIO_PIN_RESET);
 				  task_start_time = HAL_GetTick(); // Record the start time for the next state
-				  state = 5;
+				  state = 20;
 			  }
 			  break;
 
 		  case 5:
+			  if (!initial_display_done)
+			  {
+				  Display_02();
+				  task_start_time = HAL_GetTick();
+				  initial_display_done = 1;
+				  countdown_seconds = 20;
+			  }
+			  if (HAL_GetTick() - task_start_time >= 2000)
+			  {
+				  state = 6;
+			  }
+			  break;
+
+		  case 6:
+			  if (HAL_GetTick() - task_start_time < 23000)
+			  {
+				  TM1637_Countdown_20Sec();
+			  }
+			  else
+			  {
+				  if(countdown_seconds == 0)
+				  {
+					  printf("GPIO 3 5 6 7 enabled\n\r");
+					  HAL_GPIO_WritePin(SIGNAL_3_GPIO_Port, SIGNAL_3_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_6_GPIO_Port, SIGNAL_6_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_7_GPIO_Port, SIGNAL_7_Pin, GPIO_PIN_SET);
+					  task_start_time = HAL_GetTick();
+					  state = 7;
+				  }
+			  }
+			  break;
+
+		  case 7:
+			  if (HAL_GetTick() - task_start_time >= 30000)
+			  {
+				  printf("GPIO 3 5 6 7 disabled\n\r");
+				  HAL_GPIO_WritePin(SIGNAL_3_GPIO_Port, SIGNAL_3_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_6_GPIO_Port, SIGNAL_6_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_7_GPIO_Port, SIGNAL_7_Pin, GPIO_PIN_RESET);
+				  task_start_time = HAL_GetTick(); // Record the start time for the next state
+				  state = 20;
+			  }
+			  break;
+
+		  case 8:
+			  if (!initial_display_done)
+			  {
+				  Display_03();
+				  task_start_time = HAL_GetTick();
+				  initial_display_done = 1;
+				  countdown_seconds = 20;
+			  }
+			  if (HAL_GetTick() - task_start_time >= 2000)
+			  {
+				  state = 9;
+			  }
+			  break;
+
+		  case 9:
+			  if (HAL_GetTick() - task_start_time < 23000)
+			  {
+				  TM1637_Countdown_20Sec();
+			  }
+			  else
+			  {
+				  if(countdown_seconds == 0)
+				  {
+					  printf("GPIO 2 5 6 7 enabled\n\r");
+					  HAL_GPIO_WritePin(SIGNAL_2_GPIO_Port, SIGNAL_2_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_6_GPIO_Port, SIGNAL_6_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_7_GPIO_Port, SIGNAL_7_Pin, GPIO_PIN_SET);
+					  task_start_time = HAL_GetTick();
+					  state = 10;
+				  }
+			  }
+			  break;
+
+		  case 10:
+			  if (HAL_GetTick() - task_start_time >= 30000)
+			  {
+				  printf("GPIO 2 5 6 7 disabled\n\r");
+				  HAL_GPIO_WritePin(SIGNAL_2_GPIO_Port, SIGNAL_2_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_6_GPIO_Port, SIGNAL_6_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_7_GPIO_Port, SIGNAL_7_Pin, GPIO_PIN_RESET);
+				  task_start_time = HAL_GetTick(); // Record the start time for the next state
+				  state = 20;
+			  }
+			  break;
+
+		  case 11:
+			  if (!initial_display_done)
+			  {
+				  Display_SC01();
+				  task_start_time = HAL_GetTick();
+				  initial_display_done = 1;
+				  countdown_seconds = 20;
+			  }
+			  if (HAL_GetTick() - task_start_time >= 2000)
+			  {
+				  state = 12;
+			  }
+			  break;
+
+		  case 12:
+			  if (HAL_GetTick() - task_start_time < 23000)
+			  {
+				  TM1637_Countdown_20Sec();
+			  }
+			  else
+			  {
+				  if(countdown_seconds == 0)
+				  {
+					  printf("GPIO 4 5 enabled\n\r");
+					  HAL_GPIO_WritePin(SIGNAL_4_GPIO_Port, SIGNAL_4_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_SET);
+					  task_start_time = HAL_GetTick();
+					  state = 13;
+				  }
+			  }
+			  break;
+
+		  case 13:
+			  if (HAL_GetTick() - task_start_time >= 30000)
+			  {
+				  printf("GPIO 4 5 disabled\n\r");
+				  HAL_GPIO_WritePin(SIGNAL_4_GPIO_Port, SIGNAL_4_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_RESET);
+				  task_start_time = HAL_GetTick(); // Record the start time for the next state
+				  state = 20;
+			  }
+			  break;
+
+		  case 14:
+			  if (!initial_display_done)
+			  {
+				  Display_SC02();
+				  task_start_time = HAL_GetTick();
+				  initial_display_done = 1;
+				  countdown_seconds = 20;
+			  }
+			  if (HAL_GetTick() - task_start_time >= 2000)
+			  {
+				  state = 15;
+			  }
+			  break;
+
+		  case 15:
+			  if (HAL_GetTick() - task_start_time < 23000)
+			  {
+				  TM1637_Countdown_20Sec();
+			  }
+			  else
+			  {
+				  if(countdown_seconds == 0)
+				  {
+					  printf("GPIO 5 6 enabled\n\r");
+					  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_6_GPIO_Port, SIGNAL_6_Pin, GPIO_PIN_SET);
+					  task_start_time = HAL_GetTick();
+					  state = 16;
+				  }
+			  }
+			  break;
+
+		  case 16:
+			  if (HAL_GetTick() - task_start_time >= 30000)
+			  {
+				  printf("GPIO 5 6 disabled\n\r");
+				  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_6_GPIO_Port, SIGNAL_6_Pin, GPIO_PIN_RESET);
+				  task_start_time = HAL_GetTick(); // Record the start time for the next state
+				  state = 20;
+			  }
+			  break;
+
+		  case 17:
+			  if (!initial_display_done)
+			  {
+				  Display_OFF();
+				  task_start_time = HAL_GetTick();
+				  initial_display_done = 1;
+				  countdown_seconds = 20;
+			  }
+			  if (HAL_GetTick() - task_start_time >= 2000)
+			  {
+				  state = 18;
+			  }
+			  break;
+
+		  case 18:
+			  if (HAL_GetTick() - task_start_time < 23000)
+			  {
+				  TM1637_Countdown_20Sec();
+			  }
+			  else
+			  {
+				  if(countdown_seconds == 0)
+				  {
+					  printf("GPIO 2 3 4 5 7 enabled\n\r");
+					  HAL_GPIO_WritePin(SIGNAL_2_GPIO_Port, SIGNAL_2_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_3_GPIO_Port, SIGNAL_3_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_4_GPIO_Port, SIGNAL_4_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_SET);
+					  HAL_GPIO_WritePin(SIGNAL_7_GPIO_Port, SIGNAL_7_Pin, GPIO_PIN_SET);
+					  task_start_time = HAL_GetTick();
+					  state = 19;
+				  }
+			  }
+			  break;
+
+		  case 19:
+			  if (HAL_GetTick() - task_start_time >= 30000)
+			  {
+				  printf("GPIO 2 3 4 5 7 disabled\n\r");
+				  HAL_GPIO_WritePin(SIGNAL_2_GPIO_Port, SIGNAL_2_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_3_GPIO_Port, SIGNAL_3_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_4_GPIO_Port, SIGNAL_4_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_7_GPIO_Port, SIGNAL_7_Pin, GPIO_PIN_RESET);
+				  printf("return to IDLE\n\r");
+				  state = 0;
+				  coin_pulse = 0;
+				  initial_display_done = 0;
+			  }
+			  break;
+
+		  case 20:
 			  printf("GPIO A & B enabled\n\r");
 			  HAL_GPIO_WritePin(SIGNAL_A_GPIO_Port, SIGNAL_A_Pin, GPIO_PIN_SET);
 			  HAL_GPIO_WritePin(SIGNAL_B_GPIO_Port, SIGNAL_B_Pin, GPIO_PIN_SET);
@@ -273,10 +511,10 @@ int main(void)
 			  HAL_GPIO_WritePin(SIGNAL_A_GPIO_Port, SIGNAL_A_Pin, GPIO_PIN_RESET);
 			  HAL_GPIO_WritePin(SIGNAL_B_GPIO_Port, SIGNAL_B_Pin, GPIO_PIN_RESET);
 			  task_start_time = HAL_GetTick();
-			  state = 6;
+			  state = 21;
 			  break;
 
-		  case 6:
+		  case 21:
 			  TM1637_DisplayClear();
 			  if (HAL_GetTick() - task_start_time >= 90000)
 			  {
@@ -526,24 +764,30 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 void Relay_off_time(uint16_t potvalue)
 {
+	static uint32_t relay_start_time = 0;  // Static to retain value across function calls
+
+	if (relay_start_time == 0)
+	{
+		relay_start_time = HAL_GetTick();  // Set the time only once
+	}
 	 if(potvalue <= 100)
 	  {
-		  task_start_time = HAL_GetTick();
-		  if (HAL_GetTick() - task_start_time >= 15000)
+		  if (HAL_GetTick() - relay_start_time >= 15000)
 		  {
 			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
 			  printf("return to IDLE\n\r");
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
+			  readPotvalue = 0;
 		  }
 	  }
 	 else if(potvalue > 100 && potvalue < 200)
 	 {
-		 task_start_time = HAL_GetTick();
-		  if (HAL_GetTick() - task_start_time >= 20000)
+		  if (HAL_GetTick() - relay_start_time >= 20000)
 		  {
 			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
 			  printf("return to IDLE\n\r");
@@ -554,8 +798,7 @@ void Relay_off_time(uint16_t potvalue)
 	 }
 	 else if(potvalue > 200 && potvalue < 300)
 	 {
-		 task_start_time = HAL_GetTick();
-		  if (HAL_GetTick() - task_start_time >= 25000)
+		  if (HAL_GetTick() - relay_start_time >= 25000)
 		  {
 			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
 			  printf("return to IDLE\n\r");
@@ -566,8 +809,7 @@ void Relay_off_time(uint16_t potvalue)
 	 }
 	 else if(potvalue > 300 && potvalue < 400)
 	 {
-		 task_start_time = HAL_GetTick();
-		  if (HAL_GetTick() - task_start_time >= 30000)
+		  if (HAL_GetTick() - relay_start_time >= 30000)
 		  {
 			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
 			  printf("return to IDLE\n\r");
@@ -578,8 +820,7 @@ void Relay_off_time(uint16_t potvalue)
 	 }
 	 else if(potvalue > 400 && potvalue < 500)
 	 {
-		 task_start_time = HAL_GetTick();
-		  if (HAL_GetTick() - task_start_time >= 35000)
+		  if (HAL_GetTick() - relay_start_time >= 35000)
 		  {
 			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
 			  printf("return to IDLE\n\r");
@@ -590,8 +831,7 @@ void Relay_off_time(uint16_t potvalue)
 	 }
 	 else if(potvalue > 500 && potvalue < 600)
 	 {
-		 task_start_time = HAL_GetTick();
-		  if (HAL_GetTick() - task_start_time >= 40000)
+		  if (HAL_GetTick() - relay_start_time >= 40000)
 		  {
 			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
 			  printf("return to IDLE\n\r");
@@ -602,8 +842,7 @@ void Relay_off_time(uint16_t potvalue)
 	 }
 	 else if(potvalue > 600 && potvalue < 700)
 	 {
-		 task_start_time = HAL_GetTick();
-		  if (HAL_GetTick() - task_start_time >= 45000)
+		  if (HAL_GetTick() - relay_start_time >= 45000)
 		  {
 			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
 			  printf("return to IDLE\n\r");
@@ -614,8 +853,7 @@ void Relay_off_time(uint16_t potvalue)
 	 }
 	 else if(potvalue > 700 && potvalue < 800)
 	 {
-		 task_start_time = HAL_GetTick();
-		  if (HAL_GetTick() - task_start_time >= 50000)
+		  if (HAL_GetTick() - relay_start_time >= 50000)
 		  {
 			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
 			  printf("return to IDLE\n\r");
@@ -626,8 +864,7 @@ void Relay_off_time(uint16_t potvalue)
 	 }
 	 else if(potvalue > 800 && potvalue < 900)
 	 {
-		 task_start_time = HAL_GetTick();
-		  if (HAL_GetTick() - task_start_time >= 55000)
+		  if (HAL_GetTick() - relay_start_time >= 55000)
 		  {
 			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
 			  printf("return to IDLE\n\r");
@@ -638,8 +875,7 @@ void Relay_off_time(uint16_t potvalue)
 	 }
 	 else if(potvalue > 900)
 	 {
-		 task_start_time = HAL_GetTick();
-		  if (HAL_GetTick() - task_start_time >= 60000)
+		  if (HAL_GetTick() - relay_start_time >= 60000)
 		  {
 			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
 			  printf("return to IDLE\n\r");
@@ -669,16 +905,45 @@ void processPulse() {
 				printf("1 pulse is receicved\n\r");
 				state = 1;
 			}
-			else if (coin_pulse == 2)
+			else if (coin_pulse == 2 || coin_pulse == 3)
 			{
 				printf("2 pulse is receicved\n\r");
 				state = 2;
+			}
+			else if (coin_pulse == 4 || coin_pulse == 5)
+			{
+				printf("3 pulse is recived\n\r");
+				state = 5;
+			}
+			else if(coin_pulse == 6)
+			{
+				printf("6 pulse id received\n\r");
+				state = 8;
+			}
+			else if(coin_pulse == 7)
+			{
+				printf("7 pulse id received\n\r");
+				state = 11;
+			}
+			else if(coin_pulse == 8)
+			{
+				printf("8 pulse id received\n\r");
+				state = 14;
+			}
+			else if(coin_pulse == 6)
+			{
+				printf("9 pulse id received\n\r");
+				state = 17;
 			}
 			coin_pulse = 0;
 			__enable_irq();
 			pulse_interrupt_Flag = 0;
 			pulse_start_time = 0;
 		}
+//		else
+//		{
+//			pulse_start_time = HAL_GetTick();
+//		}
 	 }
 }
 
@@ -718,21 +983,51 @@ void Display_fifty(void)
 {
 	uint8_t data[4] = {0x00, digit_map[5], digit_map[0], digit_map[10]};
 	TM1637_WriteData(0xC0, data, 4);
-	printf("Displayed 50 fils\n\r");
+	printf("Displayed 50 F\n\r");
 }
 
-void Display_1dhiram(void)
+void Display_01(void)
 {
-	uint8_t data[4] = {0x00, 0x00, digit_map[1], digit_map[11]};
+	uint8_t data[4] = {0x00, 0x00, digit_map[0], digit_map[1]};
 	TM1637_WriteData(0xC0, data, 4);
-	printf("displayed 1 Dhiram\n\r");
+	printf("displayed 1 \n\r");
 }
 
-void Display_2dhiram(void)
+void Display_02(void)
 {
-	uint8_t data[4] = {0x00, 0x00, digit_map[2], digit_map[11]};
+	uint8_t data[4] = {0x00, 0x00, digit_map[0], digit_map[2]};
 	TM1637_WriteData(0xC0, data, 4);
+	printf("displayed 02 \n\r");
 }
+
+void Display_03(void)
+{
+	uint8_t data[4] = {0x00, 0x00, digit_map[0], digit_map[3]};
+	TM1637_WriteData(0xC0, data, 4);
+	printf("displayed 3 \n\r");
+}
+
+void Display_SC01(void)
+{
+	uint8_t data[4] = {digit_map[13], digit_map[14], digit_map[0], digit_map[1]};
+	TM1637_WriteData(0xC0, data, 4);
+	printf("displayed SC01\n\r");
+}
+
+void Display_SC02(void)
+{
+	uint8_t data[4] = {digit_map[13], digit_map[14], digit_map[0], digit_map[2]};
+	TM1637_WriteData(0xC0, data, 4);
+	printf("displayed SC02\n\r");
+}
+
+void Display_OFF(void)
+{
+	uint8_t data[4] = {0x00, digit_map[0], digit_map[0], digit_map[10]};
+	TM1637_WriteData(0xC0, data, 4);
+	printf("displayed OFF\n\r");
+}
+
 
 void DisplayDashes(void)
 {
@@ -766,11 +1061,19 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     {
     	uint32_t current_time = HAL_GetTick();
 
-		if ((current_time - last_pulse_time) > 50) {  // Debounce filter (50 ms)
-			last_pulse_time = current_time;
-			coin_pulse++;
-			pulse_interrupt_Flag = 1;
-		}
+    	if ((current_time - last_pulse_time) > 50)  // Debounce filter (50 ms)
+    	        {
+    	            last_pulse_time = current_time;
+    	            if (pulse_interrupt_Flag == 0)
+    	            {
+    	                coin_pulse = 1;  // Reset first pulse detection
+    	            }
+    	            else
+    	            {
+    	                coin_pulse++;  // Increment if already started
+    	            }
+    	            pulse_interrupt_Flag = 1;
+    	        }
 
     }
 }
