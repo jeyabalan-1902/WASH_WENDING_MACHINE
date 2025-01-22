@@ -129,6 +129,7 @@ void coin_acceptor_task(uint8_t pulse_count);
 void ProcessCoinInterrupt();
 void process_pulse_count(uint8_t count);
 void processPulse();
+void Relay_off_time(uint16_t potvalue);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -202,8 +203,6 @@ int main(void)
 
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
-				  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_SET);
-				  //printf("20 sec countdown starts....\n\r");
 				  if (HAL_GetTick() - task_start_time < 23000)
 				  {
 					  TM1637_Countdown_20Sec();
@@ -212,12 +211,9 @@ int main(void)
 				  {
 					  if (countdown_seconds == 0)
 					  {
-					      printf("20 sec countdown completed\n");
-					      HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
-					      printf("return to IDLE\n\r");
-					      state = 0;
-					      coin_pulse = 0;
-					      initial_display_done = 0;
+						  printf("20 sec countdown completed\n");
+						  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_SET);
+					      Relay_off_time(readPotvalue);
 					  }
 				  }
 			  }
@@ -530,6 +526,130 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void Relay_off_time(uint16_t potvalue)
+{
+	 if(potvalue <= 100)
+	  {
+		  task_start_time = HAL_GetTick();
+		  if (HAL_GetTick() - task_start_time >= 15000)
+		  {
+			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+			  printf("return to IDLE\n\r");
+			  state = 0;
+			  coin_pulse = 0;
+			  initial_display_done = 0;
+		  }
+	  }
+	 else if(potvalue > 100 && potvalue < 200)
+	 {
+		 task_start_time = HAL_GetTick();
+		  if (HAL_GetTick() - task_start_time >= 20000)
+		  {
+			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+			  printf("return to IDLE\n\r");
+			  state = 0;
+			  coin_pulse = 0;
+			  initial_display_done = 0;
+		  }
+	 }
+	 else if(potvalue > 200 && potvalue < 300)
+	 {
+		 task_start_time = HAL_GetTick();
+		  if (HAL_GetTick() - task_start_time >= 25000)
+		  {
+			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+			  printf("return to IDLE\n\r");
+			  state = 0;
+			  coin_pulse = 0;
+			  initial_display_done = 0;
+		  }
+	 }
+	 else if(potvalue > 300 && potvalue < 400)
+	 {
+		 task_start_time = HAL_GetTick();
+		  if (HAL_GetTick() - task_start_time >= 30000)
+		  {
+			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+			  printf("return to IDLE\n\r");
+			  state = 0;
+			  coin_pulse = 0;
+			  initial_display_done = 0;
+		  }
+	 }
+	 else if(potvalue > 400 && potvalue < 500)
+	 {
+		 task_start_time = HAL_GetTick();
+		  if (HAL_GetTick() - task_start_time >= 35000)
+		  {
+			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+			  printf("return to IDLE\n\r");
+			  state = 0;
+			  coin_pulse = 0;
+			  initial_display_done = 0;
+		  }
+	 }
+	 else if(potvalue > 500 && potvalue < 600)
+	 {
+		 task_start_time = HAL_GetTick();
+		  if (HAL_GetTick() - task_start_time >= 40000)
+		  {
+			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+			  printf("return to IDLE\n\r");
+			  state = 0;
+			  coin_pulse = 0;
+			  initial_display_done = 0;
+		  }
+	 }
+	 else if(potvalue > 600 && potvalue < 700)
+	 {
+		 task_start_time = HAL_GetTick();
+		  if (HAL_GetTick() - task_start_time >= 45000)
+		  {
+			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+			  printf("return to IDLE\n\r");
+			  state = 0;
+			  coin_pulse = 0;
+			  initial_display_done = 0;
+		  }
+	 }
+	 else if(potvalue > 700 && potvalue < 800)
+	 {
+		 task_start_time = HAL_GetTick();
+		  if (HAL_GetTick() - task_start_time >= 50000)
+		  {
+			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+			  printf("return to IDLE\n\r");
+			  state = 0;
+			  coin_pulse = 0;
+			  initial_display_done = 0;
+		  }
+	 }
+	 else if(potvalue > 800 && potvalue < 900)
+	 {
+		 task_start_time = HAL_GetTick();
+		  if (HAL_GetTick() - task_start_time >= 55000)
+		  {
+			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+			  printf("return to IDLE\n\r");
+			  state = 0;
+			  coin_pulse = 0;
+			  initial_display_done = 0;
+		  }
+	 }
+	 else if(potvalue > 900)
+	 {
+		 task_start_time = HAL_GetTick();
+		  if (HAL_GetTick() - task_start_time >= 60000)
+		  {
+			  HAL_GPIO_WritePin(REL_SIG_1_GPIO_Port, REL_SIG_1_Pin, GPIO_PIN_RESET);
+			  printf("return to IDLE\n\r");
+			  state = 0;
+			  coin_pulse = 0;
+			  initial_display_done = 0;
+		  }
+	 }
+}
+
 void processPulse() {
 	 static uint32_t pulse_start_time = 0;
 
