@@ -28,7 +28,6 @@
 #include <stdbool.h>
 
 #include "TM1637.h"
-#include "machine_function.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,29 +65,16 @@ UART_HandleTypeDef huart1;
 uint8_t initial_display_done = 0;
 volatile uint8_t pulse_interrupt_Flag = 0;
 uint16_t readPotvalue;
-// Global variables
-//static uint32_t last_pulse_time = 0;  // Tracks the timestamp of the last pulse
-//volatile uint32_t coin_pulse_count = 0; // Tracks the number of pulses
-//volatile uint8_t countdown_active = 0;  // Indicates if the countdown is active
-//volatile uint8_t process_pulse = 0;     // Flag to indicate pulses need processing
-volatile uint32_t current_time_ms = 0; // System time in milliseconds
-
-//static uint32_t last_pulse_time = 0;
-
-//static uint32_t last_pulse_time = 0;
-//static uint32_t coin_pulse_count = 0;
-//static uint8_t process_pulse = 0;
-
-volatile uint8_t pulseCount = 0;          // Stores the number of pulses
-volatile uint8_t pulseProcessed = 0;     // Flag to indicate processing
-volatile uint16_t timeoutCounter = 0;    // Timer counter for timeout
-
+volatile uint32_t current_time_ms = 0;
+volatile uint8_t pulseCount = 0;
+volatile uint8_t pulseProcessed = 0;
+volatile uint16_t timeoutCounter = 0;
+static uint32_t pulse_start_time = 0;
 uint32_t pulse_timeout = 500;
 uint32_t last_pulse_time = 0;
-
 volatile uint8_t coin_pulse = 0;
 
-uint8_t state = 0;            // State variable to manage tasks
+uint8_t state = 0;
 uint32_t task_start_time = 0;
 
 int countdown_seconds;
@@ -125,12 +111,8 @@ void DisplayDashes(void);
 void Display_fifty(void);
 void TM1637_Countdown_20Sec(void);
 void TM1637_DisplayClear(void);
-void coin_acceptor_task(uint8_t pulse_count);
-void ProcessCoinInterrupt();
-void process_pulse_count(uint8_t count);
 void processPulse();
 void Relay_off_time(uint16_t potvalue);
-void display_pulse2_3(void);
 void Display_01(void);
 void Display_02(void);
 void Display_03(void);
@@ -886,64 +868,63 @@ void Relay_off_time(uint16_t potvalue)
 	 }
 }
 
-void processPulse() {
-	 static uint32_t pulse_start_time = 0;
-
+void processPulse()
+{
 	 if (pulse_interrupt_Flag)
 	 {
-		 HAL_Delay(50);
-		if (pulse_start_time == 0)
-		{
-			pulse_start_time = HAL_GetTick();
-		}
+		HAL_Delay(50);
+//		if (pulse_start_time == 0)
+//		{
+//			pulse_start_time = HAL_GetTick();
+//		}
 
 		if ((HAL_GetTick() - pulse_start_time) >= pulse_timeout)
 		{
 			__disable_irq();
-			if (coin_pulse == 1)
+			switch (coin_pulse)
 			{
-				printf("1 pulse is receicved\n\r");
-				state = 1;
+				case 1:
+					printf("1 pulse received\n\r");
+					state = 1;
+					break;
+				case 2:
+					printf("2 pulses received\n\r");
+					state = 2;
+					break;
+				case 3:
+					printf("2 pulses received\n\r");
+					state = 2;
+					break;
+				case 4:
+					printf("3 pulses received\n\r");
+					state = 5;
+					break;
+				case 5:
+					printf("3 pulses received\n\r");
+					state = 5;
+					break;
+				case 6:
+					printf("6 pulses received\n\r");
+					state = 8;
+					break;
+				case 7:
+					printf("7 pulses received\n\r");
+					state = 11;
+					break;
+				case 8:
+					printf("8 pulses received\n\r");
+					state = 14;
+					break;
+				case 9:
+					printf("9 pulses received\n\r");
+					state = 17;
+					break;
+				default:
+					printf("Invalid number of pulses\n\r");
+					state = 0;
+					break;
 			}
-			else if (coin_pulse == 2 || coin_pulse == 3)
-			{
-				printf("2 pulse is receicved\n\r");
-				state = 2;
-			}
-			else if (coin_pulse == 4 || coin_pulse == 5)
-			{
-				printf("3 pulse is recived\n\r");
-				state = 5;
-			}
-			else if(coin_pulse == 6)
-			{
-				printf("6 pulse id received\n\r");
-				state = 8;
-			}
-			else if(coin_pulse == 7)
-			{
-				printf("7 pulse id received\n\r");
-				state = 11;
-			}
-			else if(coin_pulse == 8)
-			{
-				printf("8 pulse id received\n\r");
-				state = 14;
-			}
-			else if(coin_pulse == 6)
-			{
-				printf("9 pulse id received\n\r");
-				state = 17;
-			}
-			coin_pulse = 0;
-			__enable_irq();
-			pulse_interrupt_Flag = 0;
-			pulse_start_time = 0;
 		}
-//		else
-//		{
-//			pulse_start_time = HAL_GetTick();
-//		}
 	 }
 }
 
@@ -1057,25 +1038,25 @@ UART_printf
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    if (GPIO_Pin == COIN_Pin)
-    {
-    	uint32_t current_time = HAL_GetTick();
+	if (GPIO_Pin == COIN_Pin)
+	{
+		uint32_t current_time = HAL_GetTick();
 
-    	if ((current_time - last_pulse_time) > 50)  // Debounce filter (50 ms)
-    	        {
-    	            last_pulse_time = current_time;
-    	            if (pulse_interrupt_Flag == 0)
-    	            {
-    	                coin_pulse = 1;  // Reset first pulse detection
-    	            }
-    	            else
-    	            {
-    	                coin_pulse++;  // Increment if already started
-    	            }
-    	            pulse_interrupt_Flag = 1;
-    	        }
-
-    }
+		if ((current_time - last_pulse_time) > 50)  // Debounce filter (50 ms)
+		{
+			last_pulse_time = current_time;
+			if (pulse_interrupt_Flag == 0)
+			{
+				coin_pulse = 1;  // First pulse detected
+			}
+			else
+			{
+				coin_pulse++;  // Increment pulse count
+			}
+			pulse_interrupt_Flag = 1;
+			pulse_start_time = HAL_GetTick();  // Restart timeout timer on each new pulse
+		}
+	}
 }
 
 
