@@ -163,7 +163,7 @@ int main(void)
   printf("system start\n\r");
   state = 0;
   task_start_time = 0;
-
+  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -190,6 +190,7 @@ int main(void)
 
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
+				  printf("completed coin display\n\r");
 				  if (HAL_GetTick() - task_start_time < 23000)
 				  {
 					  TM1637_Countdown_20Sec();
@@ -481,6 +482,7 @@ int main(void)
 				  state = 0;
 				  coin_pulse = 0;
 				  initial_display_done = 0;
+				  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 			  }
 			  break;
 
@@ -488,12 +490,14 @@ int main(void)
 			  printf("GPIO A & B enabled\n\r");
 			  HAL_GPIO_WritePin(SIGNAL_A_GPIO_Port, SIGNAL_A_Pin, GPIO_PIN_SET);
 			  HAL_GPIO_WritePin(SIGNAL_B_GPIO_Port, SIGNAL_B_Pin, GPIO_PIN_SET);
-			  HAL_Delay(5000);
-			  printf("GPIO A & B disabled\n\r");
-			  HAL_GPIO_WritePin(SIGNAL_A_GPIO_Port, SIGNAL_A_Pin, GPIO_PIN_RESET);
-			  HAL_GPIO_WritePin(SIGNAL_B_GPIO_Port, SIGNAL_B_Pin, GPIO_PIN_RESET);
-			  task_start_time = HAL_GetTick();
-			  state = 21;
+			  if (HAL_GetTick() - task_start_time >= 5000)
+			  {
+				  printf("GPIO A & B disabled\n\r");
+				  HAL_GPIO_WritePin(SIGNAL_A_GPIO_Port, SIGNAL_A_Pin, GPIO_PIN_RESET);
+				  HAL_GPIO_WritePin(SIGNAL_B_GPIO_Port, SIGNAL_B_Pin, GPIO_PIN_RESET);
+				  task_start_time = HAL_GetTick();
+				  state = 21;
+			  }
 			  break;
 
 		  case 21:
@@ -504,7 +508,7 @@ int main(void)
 				  state = 0;
 				  coin_pulse = 0;
 				  initial_display_done = 0;
-
+				  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 			  }
 			  break;
 
@@ -705,8 +709,8 @@ static void MX_GPIO_Init(void)
                           |SIGNAL_5_Pin|SIGNAL_6_Pin|SIGNAL_7_Pin|SIGNAL_8_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SIGNAL_A_Pin|SIGNAL_B_Pin|REL_SIG_1_Pin|CLK_Pin
-                          |DATA_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, SIGNAL_A_Pin|SIGNAL_B_Pin|REL_SIG_1_Pin|CUTOFF_RELAY_Pin
+                          |CLK_Pin|DATA_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : SIGNAL_1_Pin SIGNAL_2_Pin SIGNAL_3_Pin SIGNAL_4_Pin
                            SIGNAL_5_Pin SIGNAL_6_Pin SIGNAL_7_Pin SIGNAL_8_Pin */
@@ -717,8 +721,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SIGNAL_A_Pin SIGNAL_B_Pin REL_SIG_1_Pin */
-  GPIO_InitStruct.Pin = SIGNAL_A_Pin|SIGNAL_B_Pin|REL_SIG_1_Pin;
+  /*Configure GPIO pins : SIGNAL_A_Pin SIGNAL_B_Pin REL_SIG_1_Pin CUTOFF_RELAY_Pin */
+  GPIO_InitStruct.Pin = SIGNAL_A_Pin|SIGNAL_B_Pin|REL_SIG_1_Pin|CUTOFF_RELAY_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -764,7 +768,8 @@ void Relay_off_time(uint16_t potvalue)
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
-			  readPotvalue = 0;
+			  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
+			  //readPotvalue = 0;
 		  }
 	  }
 	 else if(potvalue > 100 && potvalue < 200)
@@ -776,6 +781,7 @@ void Relay_off_time(uint16_t potvalue)
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
+			  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 		  }
 	 }
 	 else if(potvalue > 200 && potvalue < 300)
@@ -787,6 +793,7 @@ void Relay_off_time(uint16_t potvalue)
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
+			  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 		  }
 	 }
 	 else if(potvalue > 300 && potvalue < 400)
@@ -798,6 +805,7 @@ void Relay_off_time(uint16_t potvalue)
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
+			  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 		  }
 	 }
 	 else if(potvalue > 400 && potvalue < 500)
@@ -809,6 +817,7 @@ void Relay_off_time(uint16_t potvalue)
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
+			  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 		  }
 	 }
 	 else if(potvalue > 500 && potvalue < 600)
@@ -820,6 +829,7 @@ void Relay_off_time(uint16_t potvalue)
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
+			  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 		  }
 	 }
 	 else if(potvalue > 600 && potvalue < 700)
@@ -831,6 +841,7 @@ void Relay_off_time(uint16_t potvalue)
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
+			  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 		  }
 	 }
 	 else if(potvalue > 700 && potvalue < 800)
@@ -842,6 +853,7 @@ void Relay_off_time(uint16_t potvalue)
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
+			  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 		  }
 	 }
 	 else if(potvalue > 800 && potvalue < 900)
@@ -853,6 +865,7 @@ void Relay_off_time(uint16_t potvalue)
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
+			  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 		  }
 	 }
 	 else if(potvalue > 900)
@@ -864,6 +877,7 @@ void Relay_off_time(uint16_t potvalue)
 			  state = 0;
 			  coin_pulse = 0;
 			  initial_display_done = 0;
+			  HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 		  }
 	 }
 }
@@ -886,44 +900,58 @@ void processPulse()
 				case 1:
 					printf("1 pulse received\n\r");
 					state = 1;
+					HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
 					break;
 				case 2:
 					printf("2 pulses received\n\r");
 					state = 2;
+					HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
 					break;
 				case 3:
 					printf("2 pulses received\n\r");
 					state = 2;
+					HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
 					break;
 				case 4:
 					printf("3 pulses received\n\r");
 					state = 5;
+					HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
 					break;
 				case 5:
 					printf("3 pulses received\n\r");
 					state = 5;
+					HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
 					break;
 				case 6:
 					printf("6 pulses received\n\r");
 					state = 8;
+					HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
 					break;
 				case 7:
 					printf("7 pulses received\n\r");
 					state = 11;
+					HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
 					break;
 				case 8:
 					printf("8 pulses received\n\r");
 					state = 14;
+					HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
 					break;
 				case 9:
 					printf("9 pulses received\n\r");
 					state = 17;
+					HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
 					break;
 				default:
 					printf("Invalid number of pulses\n\r");
 					state = 0;
 					break;
 			}
+			coin_pulse = 0;
+			pulse_interrupt_Flag = 0;
+			pulse_start_time = 0;
+
+			__enable_irq();
 		}
 	 }
 }
@@ -971,7 +999,7 @@ void Display_01(void)
 {
 	uint8_t data[4] = {0x00, 0x00, digit_map[0], digit_map[1]};
 	TM1637_WriteData(0xC0, data, 4);
-	printf("displayed 1 \n\r");
+	printf("displayed 01 \n\r");
 }
 
 void Display_02(void)
@@ -985,7 +1013,7 @@ void Display_03(void)
 {
 	uint8_t data[4] = {0x00, 0x00, digit_map[0], digit_map[3]};
 	TM1637_WriteData(0xC0, data, 4);
-	printf("displayed 3 \n\r");
+	printf("displayed 03 \n\r");
 }
 
 void Display_SC01(void)
