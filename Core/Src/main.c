@@ -162,6 +162,9 @@ int main(void)
   printf("system start\n\r");
   state = 0;
   task_start_time = 0;
+
+  show_version();
+  HAL_Delay(1000);
   //HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
