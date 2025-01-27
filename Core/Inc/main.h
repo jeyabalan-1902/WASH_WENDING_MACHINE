@@ -82,7 +82,7 @@ void Error_Handler(void);
 #define REL_SIG_1_Pin GPIO_PIN_11
 #define REL_SIG_1_GPIO_Port GPIOB
 #define CUTOFF_RELAY_Pin GPIO_PIN_12
-#define CUTOFF_RELAY_GPIO_Port GPIOB
+#define CUTOFF_RELAY_GPIO_Port GPIOA
 #define COIN_Pin GPIO_PIN_7
 #define COIN_GPIO_Port GPIOB
 #define COIN_EXTI_IRQn EXTI4_15_IRQn
