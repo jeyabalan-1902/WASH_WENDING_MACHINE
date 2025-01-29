@@ -70,7 +70,7 @@ volatile uint8_t coin_pulse = 0;
 
 uint8_t state = 0;
 uint32_t task_start_time = 0;
-
+static uint32_t last_power_on_time = 0;
 int countdown_seconds;
 
 uint8_t digit_map[18] = {
@@ -118,6 +118,8 @@ void Display_SC01(void);
 void Display_SC02(void);
 void Display_OFF(void);
 void show_version(void);
+void restoreCoinAcceptorPower(void);
+void instantUpdateDisplay(uint8_t pulse);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -181,7 +183,6 @@ int main(void)
 			  break;
 
 	      case 1:
-
 			  if (!initial_display_done)
 			  {
 				  Display_fifty();
@@ -499,7 +500,7 @@ int main(void)
 				  initial_display_done = 0;
 				  HAL_Delay(500);
 
-				HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+				restoreCoinAcceptorPower();
 				printf("Coin acceptor Power ON\n\r");
 			  }
 			  break;
@@ -529,7 +530,7 @@ int main(void)
 				  initial_display_done = 0;
 				  HAL_Delay(500);
 
-				HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+				restoreCoinAcceptorPower();
 				printf("Coin acceptor Power ON\n\r");
 			  }
 			  break;
@@ -795,7 +796,7 @@ void Relay_off_time(uint16_t potvalue)
 			  initial_display_done = 0;
 			  HAL_Delay(500);
 
-			HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+			restoreCoinAcceptorPower();
 			printf("Coin acceptor Power ON\n\r");
 			  //readPotvalue = 0;
 		  }
@@ -811,7 +812,7 @@ void Relay_off_time(uint16_t potvalue)
 			  initial_display_done = 0;
 			  HAL_Delay(500);
 
-			HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+			restoreCoinAcceptorPower();
 			printf("Coin acceptor Power ON\n\r");
 		  }
 	 }
@@ -826,7 +827,7 @@ void Relay_off_time(uint16_t potvalue)
 			  initial_display_done = 0;
 			  HAL_Delay(500);
 
-			HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+			restoreCoinAcceptorPower();
 			printf("Coin acceptor Power ON\n\r");
 		  }
 	 }
@@ -841,7 +842,7 @@ void Relay_off_time(uint16_t potvalue)
 			  initial_display_done = 0;
 			  HAL_Delay(500);
 
-			HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+			restoreCoinAcceptorPower();
 			printf("Coin acceptor Power ON\n\r");
 		  }
 	 }
@@ -856,7 +857,7 @@ void Relay_off_time(uint16_t potvalue)
 			  initial_display_done = 0;
 			  HAL_Delay(500);
 
-			HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+			restoreCoinAcceptorPower();
 			printf("Coin acceptor Power ON\n\r");
 		  }
 	 }
@@ -871,7 +872,7 @@ void Relay_off_time(uint16_t potvalue)
 			  initial_display_done = 0;
 			  HAL_Delay(500);
 
-			HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+			restoreCoinAcceptorPower();
 			printf("Coin acceptor Power ON\n\r");
 		  }
 	 }
@@ -886,7 +887,7 @@ void Relay_off_time(uint16_t potvalue)
 			  initial_display_done = 0;
 			  HAL_Delay(500);
 
-			HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+			restoreCoinAcceptorPower();
 			printf("Coin acceptor Power ON\n\r");
 		  }
 	 }
@@ -901,7 +902,7 @@ void Relay_off_time(uint16_t potvalue)
 			  initial_display_done = 0;
 			  HAL_Delay(500);
 
-			HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+			restoreCoinAcceptorPower();
 			printf("Coin acceptor Power ON\n\r");
 		  }
 	 }
@@ -916,7 +917,7 @@ void Relay_off_time(uint16_t potvalue)
 			  initial_display_done = 0;
 			  HAL_Delay(500);
 
-			HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+			restoreCoinAcceptorPower();
 			printf("Coin acceptor Power ON\n\r");
 		  }
 	 }
@@ -931,7 +932,7 @@ void Relay_off_time(uint16_t potvalue)
 			  initial_display_done = 0;
 			  HAL_Delay(500);
 
-				HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+				restoreCoinAcceptorPower();
 				printf("Coin acceptor Power ON\n\r");
 		  }
 	 }
@@ -945,6 +946,10 @@ void processPulse()
 		if ((HAL_GetTick() - pulse_start_time) >= pulse_timeout)
 		{
 			__disable_irq();
+
+			  HAL_GPIO_WritePin(SIGNAL_4_GPIO_Port, SIGNAL_4_Pin, GPIO_PIN_RESET);      //idle state pins reset
+			  HAL_GPIO_WritePin(SIGNAL_5_GPIO_Port, SIGNAL_5_Pin, GPIO_PIN_RESET);
+			  HAL_GPIO_WritePin(SIGNAL_6_GPIO_Port, SIGNAL_6_Pin, GPIO_PIN_RESET);
 
 			HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_SET);
 			printf("Coin Acceptor power OFF\n\r");
@@ -1109,6 +1114,30 @@ void TM1637_DisplayOFF(void)
 	printf("Displayed OFF");
 }
 
+void restoreCoinAcceptorPower(void)
+{
+    HAL_GPIO_WritePin(CUTOFF_RELAY_GPIO_Port, CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
+    HAL_Delay(500);
+    last_power_on_time = HAL_GetTick();
+}
+
+void instantUpdateDisplay(uint8_t pulse)
+{
+	if(pulse > 0)
+	{
+		if(pulse == 1)
+		{
+			uint8_t data[4] = {0x00, digit_map[5], digit_map[0], digit_map[10]};
+			TM1637_WriteData(0xC0, data, 4);
+		}
+		else if(pulse == 2)
+		{
+			uint8_t data[4] = {0x00, 0x00, digit_map[1], digit_map[11]};
+			TM1637_WriteData(0xC0, data, 4);
+		}
+	}
+}
+
 #ifdef __GNUC__
 #define UART_printf   int __io_putchar(int ch)
 UART_printf
@@ -1120,9 +1149,13 @@ UART_printf
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+	uint32_t current_time = HAL_GetTick();
 	if (GPIO_Pin == COIN_Pin)
 	{
-		uint32_t current_time = HAL_GetTick();
+		if ((current_time - last_power_on_time) < 500)
+		{
+			return;
+		}
 
 		if ((current_time - last_pulse_time) > 50)
 		{
@@ -1135,6 +1168,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			{
 				coin_pulse++;
 			}
+			instantUpdateDisplay(coin_pulse);
 			pulse_interrupt_Flag = 1;
 			pulse_start_time = HAL_GetTick();
 		}
