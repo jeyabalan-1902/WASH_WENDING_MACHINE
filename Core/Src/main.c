@@ -36,10 +36,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SEG_BLANK 0x00
-#define COLON_ON  0x80
-#define COLON_OFF 0x00
-#define PULSE_TIMEOUT 50
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,7 +60,7 @@ volatile uint8_t pulseCount = 0;
 volatile uint8_t pulseProcessed = 0;
 volatile uint16_t timeoutCounter = 0;
 static uint32_t pulse_start_time = 0;
-uint32_t pulse_timeout = 2000;
+uint32_t pulse_timeout = 10000;
 uint32_t last_pulse_time = 0;
 volatile uint8_t coin_pulse = 0;
 volatile uint8_t total_coin_value = 0;
