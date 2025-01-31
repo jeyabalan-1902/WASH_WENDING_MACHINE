@@ -65,6 +65,7 @@ uint32_t last_pulse_time = 0;
 volatile uint8_t coin_pulse = 0;
 volatile uint8_t total_coin_value = 0;
 uint8_t state = 0;
+uint8_t coin_value = 0;
 uint32_t task_start_time = 0;
 static uint32_t last_power_on_time = 0;
 int countdown_seconds;
@@ -89,7 +90,7 @@ uint8_t digit_map[20] = {
         0x76, // H 16
         0x38, // L 17
 		0x1D, //o  18
-		0x3D, //d  19
+		0x5E, //d  19
     };
 
 
@@ -117,8 +118,8 @@ void Display_SC02(void);
 void Display_OFF(void);
 void show_version(void);
 void restoreCoinAcceptorPower(void);
-void instantUpdateDisplay(uint8_t pulse);
-
+void instantUpdateDisplay(uint8_t value);
+uint8_t detectCoinType(uint8_t pulses);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -187,7 +188,7 @@ int main(void)
 				  Display_fifty();
 				  task_start_time = HAL_GetTick();
 				  initial_display_done = 1;
-				  countdown_seconds = 20;
+				  countdown_seconds = 10;
 			  }
 
 			  if (HAL_GetTick() - task_start_time >= 2000)
@@ -218,7 +219,7 @@ int main(void)
 				  Display_01();
 				  task_start_time = HAL_GetTick();
 				  initial_display_done = 1;
-				  countdown_seconds = 20;
+				  countdown_seconds = 10;
 			  }
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
@@ -265,7 +266,7 @@ int main(void)
 				  Display_02();
 				  task_start_time = HAL_GetTick();
 				  initial_display_done = 1;
-				  countdown_seconds = 20;
+				  countdown_seconds = 10;
 			  }
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
@@ -314,7 +315,7 @@ int main(void)
 				  Display_03();
 				  task_start_time = HAL_GetTick();
 				  initial_display_done = 1;
-				  countdown_seconds = 20;
+				  countdown_seconds = 10;
 			  }
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
@@ -363,7 +364,7 @@ int main(void)
 				  Display_SC01();
 				  task_start_time = HAL_GetTick();
 				  initial_display_done = 1;
-				  countdown_seconds = 20;
+				  countdown_seconds = 10;
 			  }
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
@@ -408,7 +409,7 @@ int main(void)
 				  Display_SC02();
 				  task_start_time = HAL_GetTick();
 				  initial_display_done = 1;
-				  countdown_seconds = 20;
+				  countdown_seconds = 10;
 			  }
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
@@ -453,7 +454,7 @@ int main(void)
 				  TM1637_DisplayOFF();
 				  task_start_time = HAL_GetTick();
 				  initial_display_done = 1;
-				  countdown_seconds = 20;
+				  countdown_seconds = 10;
 			  }
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
@@ -997,7 +998,7 @@ void processPulse()
 					break;
 			}
 			coin_pulse = 0;
-			total_coin_value = 0;
+			coin_value = 0;
 			pulse_interrupt_Flag = 0;
 			pulse_start_time = 0;
 
@@ -1091,7 +1092,7 @@ void Display_SC02(void)
 
 void Display_OFF(void)
 {
-	uint8_t data[4] = {digit_map[16], digit_map[18], digit_map[17], digit_map[19]};
+	uint8_t data[4] = {digit_map[16], digit_map[18], digit_map[17], digit_map[11]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("displayed HOLD, wait coin process still processing\n\r");
 }
@@ -1121,13 +1122,21 @@ void restoreCoinAcceptorPower(void)
     last_power_on_time = HAL_GetTick();
 }
 
-void instantUpdateDisplay(uint8_t pulse)
+void instantUpdateDisplay(uint8_t value)
 {
-	if(pulse > 0)
+	if(value > 0)
 	{
-		uint8_t data[4] = {0x00, 0x00, digit_map[pulse], digit_map[11]};
+		uint8_t data[4] = {0x00, 0x00, digit_map[value], digit_map[11]};
 		TM1637_WriteData(0xC0, data, 4);
 	}
+}
+
+uint8_t detectCoinType(uint8_t pulses)
+{
+    if (pulses == 2) return 1; // 2 pulses = 1 unit
+    if (pulses == 4) return 2; // 4 pulses = 2 units
+    if (pulses == 6) return 3; // 6 pulses = 3 units
+    return 0;
 }
 
 #ifdef __GNUC__
@@ -1159,25 +1168,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			else
 			{
 				coin_pulse++;
-				if(coin_pulse == 2)
-				{
-					total_coin_value += 1;
-				}
-				else if(coin_pulse == 4)
-				{
-					total_coin_value += 1;
-				}
-				else if(coin_pulse == 6)
-				{
-					total_coin_value += 1;
-				}
-				else if(coin_pulse == 8)
-				{
-					total_coin_value += 1;
-				}
-				instantUpdateDisplay(total_coin_value);
 			}
-
+			coin_value += detectCoinType(coin_pulse);
+			instantUpdateDisplay(coin_value);
 			pulse_interrupt_Flag = 1;
 			pulse_start_time = HAL_GetTick();
 		}
