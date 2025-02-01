@@ -1093,7 +1093,7 @@ void Display_SC02(void)
 
 void Display_OFF(void)
 {
-	uint8_t data[4] = {digit_map[16], digit_map[18], digit_map[17], digit_map[11]};
+	uint8_t data[4] = {digit_map[16], 0b01011100, digit_map[17], digit_map[11]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("displayed HOLD, wait coin process still processing\n\r");
 }
@@ -1101,7 +1101,7 @@ void Display_OFF(void)
 
 void DisplayDashes(void)
 {
-    uint8_t data[4] = {digit_map[12],0b01011100, digit_map[12], digit_map[12]};
+    uint8_t data[4] = {digit_map[12],digit_map[12], digit_map[12], digit_map[12]};
     TM1637_WriteData(0xC0, data, 4);
     //printf("Display Dashes\n\r");
     HAL_GPIO_WritePin(SIGNAL_4_GPIO_Port, SIGNAL_4_Pin, GPIO_PIN_SET);
