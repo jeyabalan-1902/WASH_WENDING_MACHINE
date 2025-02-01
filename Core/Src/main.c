@@ -194,7 +194,7 @@ int main(void)
 			  if (HAL_GetTick() - task_start_time >= 2000)
 			  {
 				  printf("completed coin display\n\r");
-				  if (HAL_GetTick() - task_start_time < 23000)
+				  if (HAL_GetTick() - task_start_time < 13000)
 				  {
 					  TM1637_Countdown_20Sec();
 				  }
@@ -228,7 +228,7 @@ int main(void)
 			  break;
 
 		  case 3:
-			  if (HAL_GetTick() - task_start_time < 23000)
+			  if (HAL_GetTick() - task_start_time < 13000)
 			  {
 				  TM1637_Countdown_20Sec();
 			  }
@@ -275,7 +275,7 @@ int main(void)
 			  break;
 
 		  case 6:
-			  if (HAL_GetTick() - task_start_time < 23000)
+			  if (HAL_GetTick() - task_start_time < 13000)
 			  {
 				  TM1637_Countdown_20Sec();
 			  }
@@ -324,7 +324,7 @@ int main(void)
 			  break;
 
 		  case 9:
-			  if (HAL_GetTick() - task_start_time < 23000)
+			  if (HAL_GetTick() - task_start_time < 13000)
 			  {
 				  TM1637_Countdown_20Sec();
 			  }
@@ -373,7 +373,7 @@ int main(void)
 			  break;
 
 		  case 12:
-			  if (HAL_GetTick() - task_start_time < 23000)
+			  if (HAL_GetTick() - task_start_time < 13000)
 			  {
 				  TM1637_Countdown_20Sec();
 			  }
@@ -418,7 +418,7 @@ int main(void)
 			  break;
 
 		  case 15:
-			  if (HAL_GetTick() - task_start_time < 23000)
+			  if (HAL_GetTick() - task_start_time < 13000)
 			  {
 				  TM1637_Countdown_20Sec();
 			  }
@@ -463,7 +463,7 @@ int main(void)
 			  break;
 
 		  case 18:
-			  if (HAL_GetTick() - task_start_time < 23000)
+			  if (HAL_GetTick() - task_start_time < 13000)
 			  {
 				  TM1637_Countdown_20Sec();
 			  }
@@ -522,7 +522,7 @@ int main(void)
 
 		  case 21:
 			  Display_OFF();
-			  if (HAL_GetTick() - task_start_time >= 90000)
+			  if (HAL_GetTick() - task_start_time >= 5000)
 			  {
 				  printf("return to IDLE\n\r");
 				  state = 0;
@@ -942,6 +942,7 @@ void processPulse()
 {
 	 if (pulse_interrupt_Flag)
 	 {
+		instantUpdateDisplay(coin_value);
 		HAL_Delay(50);
 		if ((HAL_GetTick() - pulse_start_time) >= pulse_timeout)
 		{
@@ -1100,7 +1101,7 @@ void Display_OFF(void)
 
 void DisplayDashes(void)
 {
-    uint8_t data[4] = {digit_map[12],digit_map[12], digit_map[12], digit_map[12]};
+    uint8_t data[4] = {digit_map[12],0b01011100, digit_map[12], digit_map[12]};
     TM1637_WriteData(0xC0, data, 4);
     //printf("Display Dashes\n\r");
     HAL_GPIO_WritePin(SIGNAL_4_GPIO_Port, SIGNAL_4_Pin, GPIO_PIN_SET);
@@ -1170,7 +1171,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 				coin_pulse++;
 			}
 			coin_value += detectCoinType(coin_pulse);
-			instantUpdateDisplay(coin_value);
 			pulse_interrupt_Flag = 1;
 			pulse_start_time = HAL_GetTick();
 		}
