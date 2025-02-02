@@ -1134,11 +1134,13 @@ void instantUpdateDisplay(uint8_t value)
 
 uint8_t detectCoinType(uint8_t pulses)
 {
-    if (pulses == 2) return 1; // 2 pulses = 1 unit
-    if (pulses == 4) return 2; // 4 pulses = 2 units
-    if (pulses == 6) return 3; // 6 pulses = 3 units
+    if (pulses == 2) return 1;
+    if (pulses == 4) return 1;
+    if (pulses == 6) return 1;
+    if (pulses == 8) return 1;
     return 0;
 }
+
 
 #ifdef __GNUC__
 #define UART_printf   int __io_putchar(int ch)
@@ -1170,7 +1172,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			{
 				coin_pulse++;
 			}
-			coin_value += detectCoinType(coin_pulse);
+		    coin_value += detectCoinType(coin_pulse);
 			pulse_interrupt_Flag = 1;
 			pulse_start_time = HAL_GetTick();
 		}

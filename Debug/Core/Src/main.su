@@ -20,6 +20,6 @@
 ../Core/Src/main.c:1119:6:restoreCoinAcceptorPower	8	static
 ../Core/Src/main.c:1126:6:instantUpdateDisplay	24	static
 ../Core/Src/main.c:1135:9:detectCoinType	16	static
-../Core/Src/main.c:1145:1:__io_putchar	16	static
-../Core/Src/main.c:1152:6:HAL_GPIO_EXTI_Callback	24	static
-../Core/Src/main.c:1187:6:Error_Handler	8	static,ignoring_inline_asm
+../Core/Src/main.c:1147:1:__io_putchar	16	static
+../Core/Src/main.c:1154:6:HAL_GPIO_EXTI_Callback	24	static
+../Core/Src/main.c:1189:6:Error_Handler	8	static,ignoring_inline_asm

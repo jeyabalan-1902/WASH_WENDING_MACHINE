@@ -19,7 +19,7 @@
 ../Core/Src/main.c:1112:6:TM1637_DisplayOFF	1
 ../Core/Src/main.c:1119:6:restoreCoinAcceptorPower	1
 ../Core/Src/main.c:1126:6:instantUpdateDisplay	2
-../Core/Src/main.c:1135:9:detectCoinType	4
-../Core/Src/main.c:1145:1:__io_putchar	1
-../Core/Src/main.c:1152:6:HAL_GPIO_EXTI_Callback	5
-../Core/Src/main.c:1187:6:Error_Handler	1
+../Core/Src/main.c:1135:9:detectCoinType	5
+../Core/Src/main.c:1147:1:__io_putchar	1
+../Core/Src/main.c:1154:6:HAL_GPIO_EXTI_Callback	5
+../Core/Src/main.c:1189:6:Error_Handler	1
