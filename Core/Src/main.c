@@ -64,6 +64,7 @@ uint32_t pulse_timeout = 10000;
 uint32_t last_pulse_time = 0;
 volatile uint8_t coin_pulse = 0;
 volatile uint8_t total_coin_value = 0;
+uint8_t decimal_flag = 0;
 uint8_t state = 0;
 uint8_t coin_value = 0;
 uint32_t task_start_time = 0;
@@ -118,7 +119,7 @@ void Display_SC02(void);
 void Display_OFF(void);
 void show_version(void);
 void restoreCoinAcceptorPower(void);
-void instantUpdateDisplay(uint8_t value);
+void instantUpdateDisplay(uint8_t value, uint8_t decimal);
 uint8_t detectCoinType(uint8_t pulses);
 /* USER CODE END PFP */
 
@@ -942,14 +943,7 @@ void processPulse()
 {
 	 if (pulse_interrupt_Flag)
 	 {
-		if(coin_pulse == 1)
-		{
-			Display_fifty();
-		}
-		else
-		{
-			instantUpdateDisplay(coin_value);
-		}
+		instantUpdateDisplay(coin_value, decimal_flag);
 		HAL_Delay(50);
 		if ((HAL_GetTick() - pulse_start_time) >= pulse_timeout)
 		{
@@ -1005,6 +999,7 @@ void processPulse()
 					state = 0;
 					break;
 			}
+			decimal_flag = 0;
 			coin_pulse = 0;
 			coin_value = 0;
 			pulse_interrupt_Flag = 0;
@@ -1086,14 +1081,14 @@ void Display_03(void)
 
 void Display_SC01(void)
 {
-	uint8_t data[4] = {digit_map[13], digit_map[14], digit_map[0], digit_map[1]};
+	uint8_t data[4] = {digit_map[13], 0b00111001, digit_map[0], digit_map[1]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("displayed SC01\n\r");
 }
 
 void Display_SC02(void)
 {
-	uint8_t data[4] = {digit_map[13], digit_map[14], digit_map[0], digit_map[2]};
+	uint8_t data[4] = {digit_map[13], 0b00111001, digit_map[0], digit_map[2]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("displayed SC02\n\r");
 }
@@ -1130,17 +1125,23 @@ void restoreCoinAcceptorPower(void)
     last_power_on_time = HAL_GetTick();
 }
 
-void instantUpdateDisplay(uint8_t value)
+void instantUpdateDisplay(uint8_t value, uint8_t decimal)
 {
-	if(value >= 2)
+	if(value > 0)
 	{
 		uint8_t data[4] = {0x00, 0x00, digit_map[value], digit_map[11]};
+		TM1637_WriteData(0xC0, data, 4);
+	}
+	if (decimal)
+	{
+		uint8_t data[4] = {0x00, digit_map[5], digit_map[0], digit_map[10]};
 		TM1637_WriteData(0xC0, data, 4);
 	}
 }
 
 uint8_t detectCoinType(uint8_t pulses)
 {
+	if (pulses == 1) return 5;
     if (pulses == 2) return 1;
     if (pulses == 4) return 1;
     if (pulses == 6) return 1;
@@ -1179,7 +1180,19 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			{
 				coin_pulse++;
 			}
-		    coin_value += detectCoinType(coin_pulse);
+			uint8_t new_value = detectCoinType(coin_pulse);
+			if (new_value == 5)  // 0.5 unit coin case
+			{
+				decimal_flag = 1; // Enable decimal flag for 0.5
+				//coin_value++; // Temporarily add 1 (as half will be handled in display)
+				coin_value = 0;
+			}
+			else
+			{
+				coin_value += new_value;
+				decimal_flag = 0;
+			}
+
 			pulse_interrupt_Flag = 1;
 			pulse_start_time = HAL_GetTick();
 		}
