@@ -942,7 +942,14 @@ void processPulse()
 {
 	 if (pulse_interrupt_Flag)
 	 {
-		instantUpdateDisplay(coin_value);
+		if(coin_pulse == 1)
+		{
+			Display_fifty();
+		}
+		else
+		{
+			instantUpdateDisplay(coin_value);
+		}
 		HAL_Delay(50);
 		if ((HAL_GetTick() - pulse_start_time) >= pulse_timeout)
 		{
@@ -1125,7 +1132,7 @@ void restoreCoinAcceptorPower(void)
 
 void instantUpdateDisplay(uint8_t value)
 {
-	if(value > 0)
+	if(value >= 2)
 	{
 		uint8_t data[4] = {0x00, 0x00, digit_map[value], digit_map[11]};
 		TM1637_WriteData(0xC0, data, 4);
