@@ -506,7 +506,7 @@ int main(void)
 			  }
 			  break;
 
-		  case 20:
+		  case 21:
 			  printf("GPIO A & B enabled\n\r");
 			  HAL_GPIO_WritePin(SIGNAL_A_GPIO_Port, SIGNAL_A_Pin, GPIO_PIN_SET);
 			  HAL_GPIO_WritePin(SIGNAL_B_GPIO_Port, SIGNAL_B_Pin, GPIO_PIN_SET);
@@ -521,7 +521,7 @@ int main(void)
 			  }
 			  break;
 
-		  case 21:
+		  case 22:
 			  Display_OFF();
 			  if (HAL_GetTick() - task_start_time >= 5000)
 			  {
@@ -734,8 +734,7 @@ static void MX_GPIO_Init(void)
                           |CUTOFF_RELAY_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SIGNAL_A_Pin|SIGNAL_B_Pin|REL_SIG_1_Pin|CLK_Pin
-                          |DATA_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, SIGNAL_A_Pin|SIGNAL_B_Pin|CLK_Pin|DATA_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : SIGNAL_1_Pin SIGNAL_2_Pin SIGNAL_3_Pin SIGNAL_4_Pin
                            SIGNAL_5_Pin SIGNAL_6_Pin SIGNAL_7_Pin SIGNAL_8_Pin
@@ -748,8 +747,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SIGNAL_A_Pin SIGNAL_B_Pin REL_SIG_1_Pin */
-  GPIO_InitStruct.Pin = SIGNAL_A_Pin|SIGNAL_B_Pin|REL_SIG_1_Pin;
+  /*Configure GPIO pins : SIGNAL_A_Pin SIGNAL_B_Pin */
+  GPIO_InitStruct.Pin = SIGNAL_A_Pin|SIGNAL_B_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -994,6 +993,9 @@ void processPulse()
 					printf("9 pulses received\n\r");
 					state = 17;
 					break;
+				case 10:
+					printf("10 pulse received\n\r");
+
 				default:
 					printf("Invalid number of pulses\n\r");
 					state = 0;
@@ -1012,7 +1014,7 @@ void processPulse()
 	 }
 }
 
-void TM1637_Countdown_20Sec(void)
+void TM1637_Countdown_20Sec(void)   //20 seconds counter display
 {
 	static bool colon_state = false;
 	static uint32_t last_update_time = 0;
@@ -1044,56 +1046,56 @@ void TM1637_Countdown_20Sec(void)
     }
 }
 
-void show_version(void)
+void show_version(void)     //code version show on display
 {
 	uint8_t data[4] = {0x00, 0x00, digit_map[15], digit_map[1]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("Program version 1: A1\n\r");
 }
 
-void Display_fifty(void)
+void Display_fifty(void)       // Dispaly 50 F
 {
 	uint8_t data[4] = {0x00, digit_map[5], digit_map[0], digit_map[10]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("Displayed 50 F\n\r");
 }
 
-void Display_01(void)
+void Display_01(void)     //display 01
 {
 	uint8_t data[4] = {0x00, 0x00, digit_map[0], digit_map[1]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("displayed 01 \n\r");
 }
 
-void Display_02(void)
+void Display_02(void)      //display 02
 {
 	uint8_t data[4] = {0x00, 0x00, digit_map[0], digit_map[2]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("displayed 02 \n\r");
 }
 
-void Display_03(void)
+void Display_03(void)       //display 03
 {
 	uint8_t data[4] = {0x00, 0x00, digit_map[0], digit_map[3]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("displayed 03 \n\r");
 }
 
-void Display_SC01(void)
+void Display_SC01(void)       // display SC01
 {
 	uint8_t data[4] = {digit_map[13], 0b00111001, digit_map[0], digit_map[1]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("displayed SC01\n\r");
 }
 
-void Display_SC02(void)
+void Display_SC02(void)        //display SC02
 {
 	uint8_t data[4] = {digit_map[13], 0b00111001, digit_map[0], digit_map[2]};
 	TM1637_WriteData(0xC0, data, 4);
 	printf("displayed SC02\n\r");
 }
 
-void Display_OFF(void)
+void Display_OFF(void)           // Display HOLD
 {
 	uint8_t data[4] = {digit_map[16], 0b01011100, digit_map[17], digit_map[11]};
 	TM1637_WriteData(0xC0, data, 4);
@@ -1101,7 +1103,7 @@ void Display_OFF(void)
 }
 
 
-void DisplayDashes(void)
+void DisplayDashes(void)    //Display 4 dashes on display
 {
     uint8_t data[4] = {digit_map[12],digit_map[12], digit_map[12], digit_map[12]};
     TM1637_WriteData(0xC0, data, 4);
@@ -1111,7 +1113,7 @@ void DisplayDashes(void)
     HAL_GPIO_WritePin(SIGNAL_6_GPIO_Port, SIGNAL_6_Pin, GPIO_PIN_SET);
 }
 
-void TM1637_DisplayOFF(void)
+void TM1637_DisplayOFF(void)     //Display OFF
 {
 	uint8_t data[4] = {0x00, digit_map[0], digit_map[10], digit_map[10]};
 	TM1637_WriteData(0xC0, data, 4);
@@ -1181,10 +1183,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 				coin_pulse++;
 			}
 			uint8_t new_value = detectCoinType(coin_pulse);
-			if (new_value == 5)  // 0.5 unit coin case
+			if (new_value == 5)
 			{
-				decimal_flag = 1; // Enable decimal flag for 0.5
-				//coin_value++; // Temporarily add 1 (as half will be handled in display)
+				decimal_flag = 1;
 				coin_value = 0;
 			}
 			else

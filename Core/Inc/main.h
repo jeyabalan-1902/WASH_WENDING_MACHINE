@@ -79,8 +79,6 @@ void Error_Handler(void);
 #define SIGNAL_A_GPIO_Port GPIOB
 #define SIGNAL_B_Pin GPIO_PIN_10
 #define SIGNAL_B_GPIO_Port GPIOB
-#define REL_SIG_1_Pin GPIO_PIN_11
-#define REL_SIG_1_GPIO_Port GPIOB
 #define CUTOFF_RELAY_Pin GPIO_PIN_12
 #define CUTOFF_RELAY_GPIO_Port GPIOA
 #define COIN_Pin GPIO_PIN_7
